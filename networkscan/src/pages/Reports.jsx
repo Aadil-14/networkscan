@@ -87,7 +87,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 font-sans">
+    <div className="max-w-[1600px] mx-auto space-y-8 font-sans pb-12">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

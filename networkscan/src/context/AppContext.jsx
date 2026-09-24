@@ -29,6 +29,16 @@ function loadSavedState() {
   return null;
 }
 
+function getInitialDarkMode(savedState) {
+  if (savedState && typeof savedState.darkMode === "boolean") {
+    return savedState.darkMode;
+  }
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  return false;
+}
+
 export function AppProvider({ children }) {
   const savedState = loadSavedState();
 
@@ -64,9 +74,33 @@ export function AppProvider({ children }) {
 
   // Global UI State
   const [searchQuery, setSearchQuery] = useState("");
-  const [darkMode, setDarkMode] = useState(savedState?.darkMode || false);
+  const [hasManualPreference, setHasManualPreference] = useState(
+    () => savedState && typeof savedState.darkMode === "boolean"
+  );
+  const [darkMode, setDarkModeState] = useState(() => getInitialDarkMode(savedState));
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null); // { message: string, type: string }
+
+  const setDarkMode = (valOrFn) => {
+    setHasManualPreference(true);
+    setDarkModeState((prev) => (typeof valOrFn === "function" ? valOrFn(prev) : valOrFn));
+  };
+
+  // Listen to system theme changes when no manual preference is saved
+  useEffect(() => {
+    if (hasManualPreference || typeof window === "undefined" || !window.matchMedia) {
+      return;
+    }
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemThemeChange = (e) => {
+      setDarkModeState(e.matches);
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
+      return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+    }
+  }, [hasManualPreference]);
 
   // Persist state to localStorage on changes
   useEffect(() => {
@@ -84,7 +118,7 @@ export function AppProvider({ children }) {
         bandwidthData,
         reportSummary,
         settings,
-        darkMode,
+        darkMode: hasManualPreference ? darkMode : undefined,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
     } catch (err) {
@@ -104,9 +138,10 @@ export function AppProvider({ children }) {
     reportSummary,
     settings,
     darkMode,
+    hasManualPreference,
   ]);
 
-  // Dark Mode side effect
+  // Dark Mode side effect for root DOM class
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");

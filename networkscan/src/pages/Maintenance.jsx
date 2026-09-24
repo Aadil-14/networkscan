@@ -58,7 +58,7 @@ export default function MaintenancePage() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 font-sans">
+    <div className="max-w-[1600px] mx-auto space-y-8 font-sans pb-12">
       {/* SCHEDULE TASK MODAL */}
       <Modal
         isOpen={isScheduleModalOpen}
